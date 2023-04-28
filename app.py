@@ -13,19 +13,30 @@ def run_audio_enhancement():
     # Check if a file has been uploaded
     if uploaded_file is not None:
         # Load the audio file
-        audio_data = uploaded_file.read()
-        audio_tensor, sample_rate = torchaudio.load(audio_data)
+        try:
+            audio_data = uploaded_file.read()
+            audio_tensor, sample_rate = torchaudio.load(audio_data)
+        except Exception as e:
+            st.error("Failed to load audio file. Error: {}".format(e))
+            return
 
         # Apply the SepFormer model to the audio file
-        est_sources = model.separate_tensor(audio_tensor)
+        try:
+            est_sources = model.separate_tensor(audio_tensor)
+        except Exception as e:
+            st.error("Failed to apply SepFormer model to audio file. Error: {}".format(e))
+            return
 
         # Save the enhanced audio file
-        torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), sample_rate)
+        try:
+            torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), sample_rate)
+        except Exception as e:
+            st.error("Failed to save enhanced audio file. Error: {}".format(e))
+            return
 
         # Display the original and enhanced audio files
         st.audio(audio_data, format='audio/wav')
         st.audio("enhanced_audio.wav", format='audio/wav')
-
 
 def main():
     # Set the title and description
