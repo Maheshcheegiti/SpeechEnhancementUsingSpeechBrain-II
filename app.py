@@ -3,12 +3,13 @@ from speechbrain.pretrained import SepformerSeparation as separator
 import torchaudio
 
 def main():
-    st.title("Speech Enhancement using SpeechBrain")
+    st.title("Speech Enhancement using SpeechBrain - SepFormer")
     st.write("This app enhances the speech in an audio file using the SpeechBrain Sepformer model.")
 
     file = st.file_uploader("Upload audio file", type=["wav", "mp3"])
     if file:
         audio_bytes = file.read()
+        st.text("Original Audio")
         st.audio(audio_bytes, format="audio/wav")
 
         with open("uploaded_file.wav", "wb") as f:
@@ -25,7 +26,7 @@ def main():
 
         with open("enhanced_audio.wav", "rb") as f:
             audio_bytes = f.read()
-
+        st.text("Enhanced Audio")
         st.audio(audio_bytes, format="audio/wav")
 
 if __name__ == "__main__":
