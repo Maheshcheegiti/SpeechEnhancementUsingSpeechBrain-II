@@ -1,37 +1,32 @@
 import streamlit as st
-import torch
+from speechbrain.pretrained import SepformerSeparation as separator
 import torchaudio
-from speechbrain.pretrained import SepformerSeparation as Separator
 
 def main():
-    st.title("Speech Enhancement using Sepformer Model")
+    st.title("Speech Enhancement using SpeechBrain")
+    st.write("This app enhances the speech in an audio file using the SpeechBrain Sepformer model.")
 
-    # Load the pretrained model
-    model = Separator.from_hparams(
-        source="speechbrain/sepformer-whamr-enhancement",
-        savedir='pretrained_models/sepformer-whamr-enhancement'
-    )
+    file = st.file_uploader("Upload audio file", type=["wav", "mp3"])
+    if file:
+        audio_bytes = file.read()
+        st.audio(audio_bytes, format="audio/wav")
 
-    # Create a file uploader for the user to upload an audio file
-    file = st.file_uploader("Upload an audio file", type=["wav", "mp3"])
+        with open("uploaded_file.wav", "wb") as f:
+            f.write(audio_bytes)
 
-    # If the user has uploaded a file
-    if file is not None:
-        # Load the audio file into a Tensor
-        audio, sample_rate = torchaudio.load(file)
-
-        # Perform speech enhancement on the audio
-        est_sources = model.separate(
-            audio,
-            sample_rate=sample_rate,
-            device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = separator.from_hparams(
+            source="speechbrain/sepformer-whamr-enhancement",
+            savedir="pretrained_models/sepformer-whamr-enhancement",
         )
 
-        # Save the enhanced audio to a file
-        torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), sample_rate)
+        est_sources = model.separate_file(path="uploaded_file.wav")
 
-        # Display the enhanced audio to the user
-        st.audio("enhanced_audio.wav")
+        torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), 8000)
+
+        with open("enhanced_audio.wav", "rb") as f:
+            audio_bytes = f.read()
+
+        st.audio(audio_bytes, format="audio/wav")
 
 if __name__ == "__main__":
     main()
