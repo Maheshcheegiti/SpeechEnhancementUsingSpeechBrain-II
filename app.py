@@ -21,7 +21,7 @@ def process_file(file):
 def main():
     st.set_page_config(page_title="Speech Enhancement", page_icon="🔊", layout="wide")
 
-    st.title("Speech Enhancement")
+    st.title("Speech Enhancement - SpeechBrain - SepFormer")
 
     uploaded_file = st.file_uploader("Upload an audio file", type=ALLOWED_EXTENSIONS)
 
