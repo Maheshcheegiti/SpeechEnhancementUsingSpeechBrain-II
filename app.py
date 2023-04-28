@@ -4,39 +4,37 @@ import torchaudio
 
 model = separator.from_hparams(
     source="speechbrain/sepformer-whamr-enhancement",
-    savedir='pretrained_models/sepformer-whamr-enhancement'
+    savedir="pretrained_models/sepformer-whamr-enhancement",
 )
 
-def process_file(path):
-    est_sources = model.separate_file(path=path)
-    return est_sources
+ALLOWED_EXTENSIONS = {"wav"}
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def process_file(file):
+    speech, rate = torchaudio.load(file)
+    assert rate == 8000, "mismatch in sampling rate"
+    est_sources = model.separate_waveform(speech[0])
+    return speech[0], est_sources[0][0], rate
 
 def main():
     st.set_page_config(page_title="Speech Enhancement", page_icon="🔊", layout="wide")
-    st.title("Speech Enhancement - SpeechBrain - SepFormer")
 
-    uploaded_file = st.file_uploader("Upload an audio file", type=['wav'])
+    st.title("Speech Enhancement")
+
+    uploaded_file = st.file_uploader("Upload an audio file", type=ALLOWED_EXTENSIONS)
 
     if uploaded_file is not None:
-        with st.spinner("Processing..."):
-            # Save uploaded file to disk
-            with open("uploaded_file.wav", "wb") as f:
-                f.write(uploaded_file.getbuffer())
+        if allowed_file(uploaded_file.name):
+            with st.spinner("Processing..."):
+                speech, enhanced, sr = process_file(uploaded_file)
+            st.audio(speech, format="audio/wav", start_time=0, sample_rate=sr)
+            st.text("Original audio:")
+            st.audio(enhanced, format="audio/wav", start_time=0, sample_rate=sr)
+            st.text("Enhanced audio:")
+        else:
+            st.warning("Invalid file type. Please upload a WAV file.")
 
-            # Process file
-            est_sources = process_file(path="uploaded_file.wav")
-
-            # Save enhanced signal to disk
-            torchaudio.save("enhanced.wav", est_sources[:, :, 0].detach().cpu(), 8000)
-
-            # Load original audio
-            original_audio, sr = torchaudio.load("uploaded_file.wav")
-
-            # Show original and enhanced signals to user
-            st.text("Original Audio")
-            st.audio(original_audio.numpy(), format='audio/wav', start_time=0, caption="Original Audio")
-            st.text("Enhanced Audio")
-            st.audio("enhanced.wav", format='audio/wav', start_time=0, caption="Enhanced Audio")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
