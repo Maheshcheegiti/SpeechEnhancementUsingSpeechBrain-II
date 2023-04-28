@@ -3,6 +3,7 @@ from speechbrain.pretrained import SepformerSeparation as separator
 import torchaudio
 
 def main():
+    st.set_page_config(page_title="Speech Enhancement", page_icon="🔊", layout="wide")
     st.title("Speech Enhancement using SpeechBrain - SepFormer")
     st.write("This app enhances the speech in an audio file using the SpeechBrain Sepformer model.")
 
