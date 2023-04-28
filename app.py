@@ -1,40 +1,32 @@
 import streamlit as st
-from speechbrain.pretrained import SepformerSeparation as separator
 import torchaudio
+from speechbrain.pretrained import SepformerSeparation as separator
 
-model = separator.from_hparams(
-    source="speechbrain/sepformer-whamr-enhancement",
-    savedir="pretrained_models/sepformer-whamr-enhancement",
-)
+model = separator.from_hparams(source="speechbrain/sepformer-whamr-enhancement", savedir='pretrained_models/sepformer-whamr-enhancement')
 
-ALLOWED_EXTENSIONS = {"wav"}
+def process_file(file_path):
+    waveform, sample_rate = torchaudio.load(file_path)
+    est_sources = model.separate_file(path=file_path)
+    return waveform, est_sources[:, :, 0], sample_rate
 
 def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def process_file(file):
-    speech, rate = torchaudio.load(file)
-    assert rate == 8000, "mismatch in sampling rate"
-    est_sources = model.separate_waveform(speech[0])
-    return speech[0], est_sources[0][0], rate
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'wav'
 
 def main():
     st.set_page_config(page_title="Speech Enhancement", page_icon="🔊", layout="wide")
 
     st.title("Speech Enhancement - SpeechBrain - SepFormer")
 
-    uploaded_file = st.file_uploader("Upload an audio file", type=ALLOWED_EXTENSIONS)
+    uploaded_file = st.file_uploader("Upload an audio file", type=["wav"])
 
     if uploaded_file is not None:
         if allowed_file(uploaded_file.name):
             with st.spinner("Processing..."):
-                speech, enhanced, sr = process_file(uploaded_file)
-            st.audio(speech, format="audio/wav", start_time=0, sample_rate=sr)
-            st.text("Original audio:")
-            st.audio(enhanced, format="audio/wav", start_time=0, sample_rate=sr)
-            st.text("Enhanced audio:")
+                original_audio, enhanced_audio, sr = process_file(uploaded_file)
+            st.audio(original_audio, format='audio/wav', start_time=0, caption='Original Audio', sample_rate=sr)
+            st.audio(enhanced_audio, format='audio/wav', start_time=0, caption='Enhanced Audio', sample_rate=sr)
         else:
             st.warning("Invalid file type. Please upload a WAV file.")
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
