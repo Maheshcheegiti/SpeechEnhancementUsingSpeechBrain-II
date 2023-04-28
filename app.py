@@ -13,7 +13,7 @@ def process_file(path):
 
 def main():
     st.set_page_config(page_title="Speech Enhancement", page_icon="🔊", layout="wide")
-    st.title("Speech Enhancement - Speech Brain - SepFormer")
+    st.title("Speech Enhancement - SpeechBrain - SepFormer")
 
     uploaded_file = st.file_uploader("Upload an audio file", type=['wav'])
 
@@ -25,12 +25,18 @@ def main():
 
             # Process file
             est_sources = process_file(path="uploaded_file.wav")
-            
+
             # Save enhanced signal to disk
             torchaudio.save("enhanced.wav", est_sources[:, :, 0].detach().cpu(), 8000)
 
-            # Show enhanced signal to user
-            st.audio("enhanced.wav", format='audio/wav', start_time=0)
+            # Load original audio
+            original_audio, sr = torchaudio.load("uploaded_file.wav")
+
+            # Show original and enhanced signals to user
+            st.text("Original Audio")
+            st.audio(original_audio.numpy(), format='audio/wav', start_time=0, caption="Original Audio")
+            st.text("Enhanced Audio")
+            st.audio("enhanced.wav", format='audio/wav', start_time=0, caption="Enhanced Audio")
 
 if __name__ == '__main__':
     main()
