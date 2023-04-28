@@ -1,52 +1,37 @@
 import streamlit as st
-from speechbrain.pretrained import SepformerSeparation as separator
+import torch
 import torchaudio
-
-
-def run_audio_enhancement():
-    # Load the model
-    model = separator.from_hparams(source="speechbrain/sepformer-whamr-enhancement", savedir='pretrained_models/sepformer-whamr-enhancement')
-
-    # Create a file uploader
-    uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3"])
-
-    # Check if a file has been uploaded
-    if uploaded_file is not None:
-        # Load the audio file
-        try:
-            audio_data = uploaded_file.read()
-            audio_tensor, sample_rate = torchaudio.load(audio_data)
-        except Exception as e:
-            st.error("Failed to load audio file. Error: {}".format(e))
-            return
-
-        # Apply the SepFormer model to the audio file
-        try:
-            est_sources = model.separate_tensor(audio_tensor)
-        except Exception as e:
-            st.error("Failed to apply SepFormer model to audio file. Error: {}".format(e))
-            return
-
-        # Save the enhanced audio file
-        try:
-            torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), sample_rate)
-        except Exception as e:
-            st.error("Failed to save enhanced audio file. Error: {}".format(e))
-            return
-
-        # Display the original and enhanced audio files
-        st.audio(audio_data, format='audio/wav')
-        st.audio("enhanced_audio.wav", format='audio/wav')
+from speechbrain.pretrained import SepformerSeparation as Separator
 
 def main():
-    # Set the title and description
-    st.set_page_config(page_title="Audio Enhancement with SepFormer")
-    st.title("Audio Enhancement with SepFormer")
-    st.write("This app uses the SepFormer model to enhance audio.")
+    st.title("Speech Enhancement using Sepformer Model")
 
-    # Run the audio enhancement function
-    run_audio_enhancement()
+    # Load the pretrained model
+    model = Separator.from_hparams(
+        source="speechbrain/sepformer-whamr-enhancement",
+        savedir='pretrained_models/sepformer-whamr-enhancement'
+    )
 
+    # Create a file uploader for the user to upload an audio file
+    file = st.file_uploader("Upload an audio file", type=["wav", "mp3"])
+
+    # If the user has uploaded a file
+    if file is not None:
+        # Load the audio file into a Tensor
+        audio, sample_rate = torchaudio.load(file)
+
+        # Perform speech enhancement on the audio
+        est_sources = model.separate(
+            audio,
+            sample_rate=sample_rate,
+            device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        )
+
+        # Save the enhanced audio to a file
+        torchaudio.save("enhanced_audio.wav", est_sources[:, :, 0].detach().cpu(), sample_rate)
+
+        # Display the enhanced audio to the user
+        st.audio("enhanced_audio.wav")
 
 if __name__ == "__main__":
     main()
