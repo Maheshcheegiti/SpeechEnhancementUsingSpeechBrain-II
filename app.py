@@ -21,12 +21,14 @@ def main():
 
     if uploaded_file is not None:
         if allowed_file(uploaded_file.name):
-            with st.spinner("Processing..."):
-                original_audio, enhanced_audio, sr = process_file(uploaded_file)
-            st.audio(original_audio, format='audio/wav', start_time=0, caption='Original Audio', sample_rate=sr)
-            st.audio(enhanced_audio, format='audio/wav', start_time=0, caption='Enhanced Audio', sample_rate=sr)
-        else:
-            st.warning("Invalid file type. Please upload a WAV file.")
-
+        with st.spinner("Processing..."):
+            file_path = os.path.join("uploads", uploaded_file.name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            speech, enhanced, sr = process_file(file_path)
+        st.audio(speech, format='audio/wav', start_time=0, caption="Original Audio",  sample_rate=sr)
+        st.audio(enhanced, format='audio/wav', start_time=0, caption="Enhanced Audio", sample_rate=sr)
+    else:
+        st.warning("Invalid file type. Please upload a WAV file.")
 if __name__ == '__main__':
     main()
